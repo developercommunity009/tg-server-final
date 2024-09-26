@@ -13,7 +13,7 @@ const { ethers } = require('ethers');
 
 
 exports.createUser = catchAsync(async (req, res, next) => {
-    const {  wallet } = req.body;
+    const {  wallet , profilePicture } = req.body;
 
     // Check if the wallet is provided
     if(!wallet) {
@@ -32,7 +32,7 @@ exports.createUser = catchAsync(async (req, res, next) => {
     }
 
     // Create and save the new user
-    const user = await User.create({ wallet });
+    const user = await User.create({ wallet , profilePicture });
     emitSocketEvent(req , userCreated , user )
     res.status(201).json(new ApiResponse(201, { user }, 'User created successfully'));
 });
