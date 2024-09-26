@@ -16,29 +16,29 @@ const axios = require('axios');
 // Create a new coin
 exports.createCoin = catchAsync(async (req, res, next) => {
     const { name, ticker, description, image, chain, creatorWallet } = req.body;
-  
+
     // Check for required fields
     if (!name || !ticker || !description || !image || !chain) {
-      return next(new AppError('All fields (name, ticker, description, image, chain) are required', 400));
+        return next(new AppError('All fields (name, ticker, description, image, chain) are required', 400));
     }
-  
+
     if (!creatorWallet) {
-      return next(new AppError('Creator wallet address is required', 400));
+        return next(new AppError('Creator wallet address is required', 400));
     }
-  
+
     // Create new coin
     const newCoin = await Coin.create(req.body);
-  
+
     // Emit socket event for the new coin
     emitSocketEvent(req, "newCoinCreated", newCoin);
-  
+
     // Send success response
     res.status(201).json(new ApiResponse(201, { coin: newCoin }, 'Coin created successfully'));
-  });
-  
+});
+
 
 exports.searchCoins = catchAsync(async (req, res) => {
-    
+
     try {
         const { query } = req.query; // Get the search query from the request
 
@@ -61,7 +61,7 @@ exports.searchCoins = catchAsync(async (req, res) => {
         }).populate('creator'); // Populate creator's name
 
 
-           res.status(200).json(new ApiResponse(201, coins, 'Coin get successfully'));
+        res.status(200).json(new ApiResponse(201, coins, 'Coin get successfully'));
     } catch (error) {
         res.status(500).json({ message: 'Server error', error });
     }
@@ -80,7 +80,7 @@ exports.getCoin = catchAsync(async (req, res, next) => {
 exports.getAllCoins = catchAsync(async (req, res, next) => {
     // Exclude coins with usdMarketCap equal to or greater than 69000
     const features = new APIFeatures(
-        Coin.find({ usdMarketCap: { $lt: 69000 } }).populate('creator'), 
+        Coin.find({ usdMarketCap: { $lt: 69000 } }).populate('creator'),
         req.query
     )
         .filter()
@@ -99,7 +99,7 @@ exports.getAllCoins = catchAsync(async (req, res, next) => {
 exports.getHilsCoins = catchAsync(async (req, res, next) => {
     // Only show coins with usdMarketCap equal to or greater than 69000
     const features = new APIFeatures(
-        Coin.find({ usdMarketCap: { $gte: 69000 } }).populate('creator'), 
+        Coin.find({ usdMarketCap: { $gte: 69000 } }).populate('creator'),
         req.query
     )
         .filter()
@@ -118,10 +118,12 @@ exports.getFeaturedCoins = catchAsync(async (req, res, next) => {
     // Only show coins with usdMarketCap equal to or greater than 69000
     // const coins = await Coin.find({ usdMarketCap: { $gte: 30000 } });
     const features = new APIFeatures(
-        Coin.find({    usdMarketCap: { 
-            $gte: 30000, // Greater than or equal to 30000
-            $lt: 69000   // Less than 69000
-        }  }).populate('creator'), 
+        Coin.find({
+            usdMarketCap: {
+                $gte: 30000, // Greater than or equal to 30000
+                $lt: 69000   // Less than 69000
+            }
+        }).populate('creator'),
         req.query
     )
         .filter()
@@ -165,7 +167,7 @@ exports.getAllCoinsByUserWallet = catchAsync(async (req, res, next) => {
     if (!address) {
         return next(new AppError('User Wallet  required', 400));
     }
-    
+
     // Find all coins by user ID
     const coins = await Coin.find({ creatorWallet: address })
     // .populate("creator");
@@ -318,6 +320,9 @@ exports.buyTokens = catchAsync(async (req, res, next) => {
         case 'matic':
             usdValue = priceData['matic-network']?.usd;
             break;
+        case 'base':
+            usdValue = priceData?.ethereum?.usd;
+            break;
         default:
             return next(new AppError('Unsupported chain', 400));
     }
@@ -389,7 +394,7 @@ exports.buyTokens = catchAsync(async (req, res, next) => {
     });
 
     // Emit a socket event
-    emitSocketEvent(req, 'tradeBuy',  trxn );
+    emitSocketEvent(req, 'tradeBuy', trxn);
 
     // Send response
     res.status(200).json(new ApiResponse(200, { coin }, 'Token bought successfully'));
@@ -443,6 +448,9 @@ exports.sellTokens = catchAsync(async (req, res, next) => {
         case 'matic':
             usdValue = priceData['matic-network']?.usd;
             break;
+        case 'base':
+            usdValue = priceData?.ethereum?.usd;
+            break;
         default:
             return next(new AppError('Unsupported chain', 400));
     }
@@ -457,7 +465,7 @@ exports.sellTokens = catchAsync(async (req, res, next) => {
 
     // Validate user's holdings
     const userCoin = user.coin_held.find(c => c.coin.toString() === coinId);
-    
+
 
     if (!userCoin || userCoin.quantity <= sellTokenQty) {
         return next(new AppError('Not enough tokens to sell', 402));
@@ -496,7 +504,7 @@ exports.sellTokens = catchAsync(async (req, res, next) => {
         price: coin.currentPrice,
     });
 
-    emitSocketEvent(req, 'tradeSell',  trxn );
+    emitSocketEvent(req, 'tradeSell', trxn);
     // Send response
     res.status(200).json(new ApiResponse(200, { coin }, 'Token sold successfully'));
 });
