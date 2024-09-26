@@ -15,29 +15,27 @@ const axios = require('axios');
 
 // Create a new coin
 exports.createCoin = catchAsync(async (req, res, next) => {
-    const { name, ticker, description, image, chain, creator } = req.body;
-
-    if (!name || !ticker || !description || !image || !chain || !creator) {
-        return next(new AppError('All fields are required', 400));
+    const { name, ticker, description, image, chain, creatorWallet } = req.body;
+  
+    // Check for required fields
+    if (!name || !ticker || !description || !image || !chain) {
+      return next(new AppError('All fields (name, ticker, description, image, chain) are required', 400));
     }
-
-    const newCoin = await Coin.create({
-        name,
-        ticker,
-        description,
-        image,
-        chain,
-        creator,
-        openPrice: 0.000002, // Initial price
-        closePrice: 0.000002,
-        highPrice: 0.000002,
-        lowPrice: 0.000002,
-        volume: 0
-    });
+  
+    if (!creatorWallet) {
+      return next(new AppError('Creator wallet address is required', 400));
+    }
+  
+    // Create new coin
+    const newCoin = await Coin.create(req.body);
+  
+    // Emit socket event for the new coin
     emitSocketEvent(req, "newCoinCreated", newCoin);
+  
+    // Send success response
     res.status(201).json(new ApiResponse(201, { coin: newCoin }, 'Coin created successfully'));
-});
-
+  });
+  
 
 exports.searchCoins = catchAsync(async (req, res) => {
     
@@ -149,6 +147,28 @@ exports.getAllCoinsByUserId = catchAsync(async (req, res, next) => {
     console.log(id);
     // Find all coins by user ID
     const coins = await Coin.find({ creator: id }).populate("creator");
+
+    // If no coins found, return error
+    if (!coins || coins.length === 0) {
+        return next(new AppError('Coins not found', 404));
+    }
+
+    // Return the found coins
+    res.status(200).json(new ApiResponse(200, { coins }, 'Coins retrieved successfully'));
+});
+
+// Get all coins by WalletAddress
+exports.getAllCoinsByUserWallet = catchAsync(async (req, res, next) => {
+    const { address } = req.params;
+
+    // Check if id is provided
+    if (!address) {
+        return next(new AppError('User Wallet  required', 400));
+    }
+    
+    // Find all coins by user ID
+    const coins = await Coin.find({ creatorWallet: address })
+    // .populate("creator");
 
     // If no coins found, return error
     if (!coins || coins.length === 0) {

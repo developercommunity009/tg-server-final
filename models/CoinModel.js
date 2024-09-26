@@ -41,6 +41,9 @@ const CoinSchema = new Schema({
     creator: {
         type: Schema.Types.ObjectId,
         ref: 'User',
+    },
+    creatorWallet: {
+        type: String,
         required: true
     },
     holders: [{
