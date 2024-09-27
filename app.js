@@ -45,8 +45,8 @@ app.use(cookieParser());
 
 // CORS Configuration
 const allowedOrigins = process.env.NODE_ENV === 'production' 
-  ? ['https://www.telepump.app'] 
-  : ['https://www.telepump.app'];
+  ? ['https://tege-jade.vercel.app'] 
+  : ['http://localhost:5173'];
 
 app.use(cors({
   origin: allowedOrigins,
