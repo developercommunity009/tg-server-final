@@ -1,10 +1,12 @@
 
 const User = require('../models/UserModel'); // Adjust the path as necessary
+const Coin = require('../models/CoinModel');
 const catchAsync = require('../utils/catchAsync'); // Adjust the path as necessary
 const AppError = require('../utils/appError'); // Adjust the path as necessary
 const ApiResponse = require('../utils/apiResponse'); // Adjust the path as necessary
 const { emitSocketEvent } = require('../sockets');
 const { ethers } = require('ethers');
+
 
 
 // function isValidEthereumAddress(address) {
@@ -86,6 +88,31 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
 
 
 // Update profile picture
+// exports.updateProfileImageByWallet = catchAsync(async (req, res, next) => {
+//     const { wallet } = req.body;
+
+//     // Find the user by wallet
+//     const user = await User.findOne({ wallet });
+
+//     if (!user) {
+//         return next(new AppError('User not found with this wallet', 404));
+//     }
+
+//     // Check if the image data is present in the request
+//     if (!req.body.image) {
+//         return next(new AppError('No image uploaded', 400));
+//     }
+
+//     // Update the user's profile picture with the Cloudinary URL
+//     user.profilePicture = req.body.image.url;
+
+//     await user.save();
+
+//     res.status(200).json(new ApiResponse(200, user, 'Profile image updated successfully'));
+// });
+
+
+// Update profile picture
 exports.updateProfileImageByWallet = catchAsync(async (req, res, next) => {
     const { wallet } = req.body;
 
@@ -97,14 +124,22 @@ exports.updateProfileImageByWallet = catchAsync(async (req, res, next) => {
     }
 
     // Check if the image data is present in the request
-    if (!req.body.image) {
+    if (!req.body.image || !req.body.image.url) {
         return next(new AppError('No image uploaded', 400));
     }
 
     // Update the user's profile picture with the Cloudinary URL
     user.profilePicture = req.body.image.url;
 
+    // Save the updated user profile picture
     await user.save();
 
-    res.status(200).json(new ApiResponse(200, user, 'Profile image updated successfully'));
+    // Find coins by creatorWallet (wallet) and update creator to user._id
+    const coins = await Coin.updateMany(
+        { creatorWallet: wallet },  // Match coins where creatorWallet equals the user's wallet
+        { $set: { creator: user._id } }  // Update the creator field to user's _id
+    );
+
+    // Return success response
+    res.status(200).json(new ApiResponse(200, user, 'Profile image updated and coin creator set successfully'));
 });
