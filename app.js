@@ -21,13 +21,14 @@ const { initializeSocketIO } = require("./sockets");
 const morganMiddleware = require("./logger/morgan.logger");
 
 // Route Handlers
-const userRoutes = require('./routes/userRoutes');
-const coinRoutes = require('./routes/coinRoutes');
-const commentRoutes = require('./routes/commentRoutes');
-const imageRoutes = require('./routes/imageUploadRoutes');
-const transactionRoutes = require('./routes/transctionRoute');
-const chartRoutes = require('./routes/chartRoutes');
-// const deployCoinRoutes = require('./routes/deplouCoinRoutes');
+const authRoutes = require('./routes/authRoutes');
+const doctorRoutes = require('./routes/doctorRoutes');
+const patientRoutes = require('./routes/patientRoutes');
+const egginfoRoutes = require('./routes/eggInformationRoutes');
+const medicationRoutes = require('./routes/medicationScheduleRoutes');
+const embryoRoutes = require('./routes/embryoRoutes');
+const bloodTestRoutes = require('./routes/bloodTestRoutes');
+const ultrasoundTestRoutes = require('./routes/ultrasoundTestRoutes');
 
 // Initialize Express App
 const app = express();
@@ -44,9 +45,15 @@ app.use(express.json({ limit: "10kb" }));
 app.use(cookieParser());
 
 // CORS Configuration
-const allowedOrigins = process.env.NODE_ENV === 'production' 
-? ['https://www.telepump.app'] 
-: ['https://www.telepump.app'];
+
+const allowedOrigins =
+  process.env.NODE_ENV === "development"
+    ? ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175"]
+    : ["https://your-production-domain.com"]; // Replace with actual production URL
+
+// const allowedOrigins = process.env.NODE_ENV === 'production' 
+// ? ['http://localhost:5173/'] 
+// : ['http://localhost:5173/'];
 
 app.use(cors({
   origin: allowedOrigins,
@@ -72,17 +79,20 @@ app.use(morganMiddleware);
 
 // Basic Route
 app.get("/", (req, res) => {
-  res.json("Pump Fun Server");
+  res.json("Embrotrust Server is Running");
 });
 
 // API Routes
-app.use('/api/v1/users', userRoutes);
-app.use('/api/v1/coins', coinRoutes);   
-app.use('/api/v1/comments', commentRoutes);
-app.use('/api/v1/images', imageRoutes); 
-app.use('/api/v1/trnx', transactionRoutes); 
-app.use('/api/v1/chart', chartRoutes ); 
-// app.use('/api/v1/deploy', deployCoinRoutes ); 
+app.use('/api/v1/', authRoutes);
+app.use('/api/v1/doctor', doctorRoutes);
+app.use('/api/v1/patient', patientRoutes);
+app.use('/api/v1/egginfo', egginfoRoutes);
+app.use('/api/v1/medication', medicationRoutes);
+app.use('/api/v1/embryo', embryoRoutes);
+app.use('/api/v1/blood', bloodTestRoutes);
+app.use('/api/v1/ultrasound', ultrasoundTestRoutes);
+
+
 
 // Handle Undefined Routes
 app.all("*", (req, res, next) => {
